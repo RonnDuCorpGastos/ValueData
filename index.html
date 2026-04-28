@@ -256,6 +256,7 @@ input{-webkit-appearance:none;appearance:none;}
     <div class="field"><label>Contrasena</label><input type="password" id="loginPass" placeholder="tu contrasena" autocomplete="current-password"/></div>
     <div class="auth-err" id="loginErr"></div>
     <button class="btn-main" id="loginBtn" onclick="doLogin()">Entrar</button>
+    <button onclick="showRecovery()" style="background:none;border:none;color:var(--gold2);font-size:15px;cursor:pointer;padding:6px 0;text-decoration:underline;font-family:var(--font);">Olvide mi contrasena</button>
   </div>
   <div id="registerForm" class="auth-body hidden">
     <div class="auth-title">Crea tu cuenta</div>
@@ -267,6 +268,15 @@ input{-webkit-appearance:none;appearance:none;}
     <div class="auth-err" id="regErr"></div>
     <div class="auth-ok" id="regOk"></div>
     <button class="btn-main" id="registerBtn" onclick="doRegister()">Crear cuenta</button>
+  </div>
+  <div id="recoveryForm" class="auth-body hidden">
+    <div class="auth-title">Recuperar contrasena</div>
+    <div class="auth-hint">Te enviamos un enlace para cambiar tu contrasena</div>
+    <div class="field"><label>Tu correo electronico</label><input type="email" id="recoveryEmail" placeholder="tu@correo.com" inputmode="email"/></div>
+    <div class="auth-err" id="recoveryErr"></div>
+    <div class="auth-ok" id="recoveryOk"></div>
+    <button class="btn-main" id="recoveryBtn" onclick="doRecovery()">Enviar enlace al correo</button>
+    <button onclick="showAuthTab('login')" style="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:4px 0;font-family:var(--font);">Volver al inicio de sesion</button>
   </div>
 </div>
 
@@ -392,7 +402,7 @@ input{-webkit-appearance:none;appearance:none;}
 // SUPABASE CONFIG
 // ═══════════════════════════════════════════
 var SUPA_URL = 'https://noyvanwehsbrnbzajeas.supabase.co';
-var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veXZhbndlaHNicm5iemFqZWFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2MjM0NTIsImV4cCI6MjA2MTE5OTQ1Mn0.j2K456zlOZuJtVUULHEl1KJ6FT9ugArhuHye3X_ClzE';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veXZhbndlaHNicm5iemFqZWFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxNDM3NTQsImV4cCI6MjA5MjcxOTc1NH0.j2K456zlOZuJtVUULHEl1KJ6FT9ugArhuHye3X_ClzE';
 
 var HEADERS = {
   'Content-Type': 'application/json',
@@ -453,6 +463,13 @@ function showAuthTab(tab) {
   });
   document.getElementById('loginForm').classList.toggle('hidden', tab!=='login');
   document.getElementById('registerForm').classList.toggle('hidden', tab!=='register');
+  var rf = document.getElementById('recoveryForm'); if(rf) rf.classList.add('hidden');
+}
+function showRecovery() {
+  document.getElementById('loginForm').classList.add('hidden');
+  document.getElementById('registerForm').classList.add('hidden');
+  document.getElementById('recoveryForm').classList.remove('hidden');
+  document.querySelectorAll('.auth-tab').forEach(function(b){ b.classList.remove('active'); });
 }
 
 // ═══════════════════════════════════════════
@@ -485,19 +502,26 @@ function doLogin() {
   .then(function(r){ return r.json(); })
   .then(function(data) {
     btn.disabled = false; btn.textContent = 'Entrar';
-    if (data.error || !data.access_token) {
-      showAuthErr(err, data.error_description || data.msg || 'Correo o contrasena incorrectos.');
+    if (!data.access_token) {
+      btn.disabled = false; btn.textContent = 'Entrar';
+      var lmsg = data.error_description || data.msg || data.error || '';
+      if (lmsg.toLowerCase().indexOf('confirm') >= 0) {
+        showAuthErr(err,'Debes confirmar tu correo primero. Revisa tu bandeja de entrada y spam.');
+      } else {
+        showAuthErr(err,'Correo o contrasena incorrectos. Usa el enlace Olvide mi contrasena si es necesario.');
+      }
       return;
     }
     accessToken = data.access_token;
-    // Cargar perfil desde tabla usuarios
-    return supa('/rest/v1/usuarios?select=*&id=eq.' + data.user.id, 'GET', null, accessToken)
+    var uid2 = data.user.id;
+    supa('/rest/v1/usuarios?select=*&id=eq.' + uid2, 'GET', null, accessToken)
       .then(function(perfil) {
-        if (perfil && perfil.length > 0) {
-          currentUser = perfil[0];
-        } else {
-          currentUser = { id: data.user.id, email: email, nombre_completo: email, username: email.split('@')[0] };
-        }
+        currentUser = (perfil && perfil.length > 0) ? perfil[0] : { id: uid2, email: email, nombre_completo: email.split('@')[0], username: email.split('@')[0] };
+        localStorage.setItem('vd_session', JSON.stringify({ token: accessToken, user: currentUser }));
+        enterApp();
+      })
+      .catch(function() {
+        currentUser = { id: uid2, email: email, nombre_completo: email.split('@')[0], username: email.split('@')[0] };
         localStorage.setItem('vd_session', JSON.stringify({ token: accessToken, user: currentUser }));
         enterApp();
       });
@@ -535,18 +559,26 @@ function doRegister() {
   })
   .then(function(r){ return r.json(); })
   .then(function(data) {
-    if (data.error) { btn.disabled=false; btn.textContent='Crear cuenta'; showAuthErr(err, data.msg || data.error); return; }
-
+    // Handle errors
+    if (data.error || (data.code && parseInt(data.code) >= 400)) {
+      btn.disabled=false; btn.textContent='Crear cuenta';
+      var rmsg = data.msg || data.error || data.message || '';
+      if (rmsg.toLowerCase().indexOf('already') >= 0) {
+        showAuthErr(err,'Este correo ya tiene una cuenta. Inicia sesion o recupera tu contrasena.');
+      } else {
+        showAuthErr(err, rmsg || 'Error al crear la cuenta.');
+      }
+      return;
+    }
     var uid = data.user ? data.user.id : null;
     var tok = data.access_token || null;
-    if (!uid) { btn.disabled=false; btn.textContent='Crear cuenta'; showAuthErr(err,'No se pudo crear la cuenta. Intenta de nuevo.'); return; }
+    if (!uid) { btn.disabled=false; btn.textContent='Crear cuenta'; showAuthErr(err,'No se obtuvo ID. Intenta de nuevo.'); return; }
 
     // 2. Guardar perfil en tabla usuarios
-    var h = Object.assign({}, HEADERS, { 'Prefer': 'return=minimal' });
-    if (tok) h['Authorization'] = 'Bearer ' + tok;
+    var profHeaders = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'};
     return fetch(SUPA_URL + '/rest/v1/usuarios', {
       method: 'POST',
-      headers: h,
+      headers: profHeaders,
       body: JSON.stringify({
         id: uid,
         nombre_completo: name,
@@ -557,16 +589,30 @@ function doRegister() {
     })
     .then(function() {
       btn.disabled = false; btn.textContent = 'Crear cuenta';
-      ok.textContent = 'Cuenta creada. Revisa tu correo para confirmar (o inicia sesion directamente).';
-      ok.style.display = 'block';
-      // Si Supabase no requiere confirmacion de email, login directo
       if (tok) {
         accessToken = tok;
         currentUser = { id: uid, email: email, nombre_completo: name, username: user };
         localStorage.setItem('vd_session', JSON.stringify({ token: accessToken, user: currentUser }));
-        setTimeout(enterApp, 1200);
+        ok.textContent = 'Cuenta creada. Bienvenido a Value Data!';
+        ok.style.display = 'block';
+        setTimeout(enterApp, 800);
       } else {
-        setTimeout(function(){ showAuthTab('login'); }, 2000);
+        ok.textContent = 'Cuenta creada. Revisa tu correo ' + email + ' y toca el enlace de confirmacion, luego inicia sesion.';
+        ok.style.display = 'block';
+        setTimeout(function(){ showAuthTab('login'); }, 5000);
+      }
+    })
+    .catch(function() {
+      btn.disabled = false; btn.textContent = 'Crear cuenta';
+      if (tok) {
+        accessToken = tok;
+        currentUser = { id: uid, email: email, nombre_completo: name, username: user };
+        localStorage.setItem('vd_session', JSON.stringify({ token: accessToken, user: currentUser }));
+        setTimeout(enterApp, 400);
+      } else {
+        ok.textContent = 'Cuenta creada. Revisa tu correo para confirmar y luego inicia sesion.';
+        ok.style.display = 'block';
+        setTimeout(function(){ showAuthTab('login'); }, 4000);
       }
     });
   })
@@ -576,6 +622,27 @@ function doRegister() {
   });
 }
 
+function doRecovery() {
+  var email = document.getElementById('recoveryEmail').value.trim().toLowerCase();
+  var err = document.getElementById('recoveryErr');
+  var ok  = document.getElementById('recoveryOk');
+  var btn = document.getElementById('recoveryBtn');
+  err.style.display='none'; ok.style.display='none';
+  if (!email) { err.textContent='Ingresa tu correo.'; err.style.display='block'; return; }
+  btn.disabled=true; btn.textContent='Enviando...';
+  fetch(SUPA_URL+'/auth/v1/recover',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPA_KEY},
+    body:JSON.stringify({email:email})
+  }).then(function(){
+    btn.disabled=false; btn.textContent='Enviar enlace al correo';
+    ok.textContent='Listo! Revisa tu correo '+email+'. Si no llega, revisa la carpeta spam.';
+    ok.style.display='block';
+  }).catch(function(){
+    btn.disabled=false; btn.textContent='Enviar enlace al correo';
+    err.textContent='Error de conexion. Intenta de nuevo.'; err.style.display='block';
+  });
+}
 function showAuthErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
 
 // ═══════════════════════════════════════════
