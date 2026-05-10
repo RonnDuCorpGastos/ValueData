@@ -37,7 +37,7 @@ input{-webkit-appearance:none;appearance:none;}
 .auth-hint{font-size:13px;color:var(--text3);margin-top:-8px;}
 .field{display:flex;flex-direction:column;gap:8px;}
 .field label{font-size:14px;font-weight:500;color:var(--text2);}
-.field input{padding:16px 18px;font-size:17px;border:1.5px solid var(--border);border-radius:var(--r2);background:var(--bg3);color:var(--text);width:100%;transition:border-color .2s;}
+.field input{padding:16px 18px;font-size:17px;border:1.5px solid var(--border);border-radius:var(--r2);background:var(--bg3);color:var(--text);width:100%;transition:border-color .2s;box-sizing:border-box;}
 .field input:focus{outline:none;border-color:var(--gold);}
 .field input::placeholder{color:var(--text3);}
 .btn-main{width:100%;padding:18px;font-size:18px;font-weight:700;background:var(--gold);color:#1a1400;border:none;border-radius:var(--r2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .15s;}
@@ -253,7 +253,13 @@ input{-webkit-appearance:none;appearance:none;}
     <div class="auth-title">Bienvenido</div>
     <div class="auth-hint">Ingresa con tu cuenta para ver tus escaneos</div>
     <div class="field"><label>Correo electronico</label><input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="email" inputmode="email"/></div>
-    <div class="field"><label>Contrasena</label><input type="password" id="loginPass" placeholder="tu contrasena" autocomplete="current-password"/></div>
+    <div class="field">
+      <label>Contrasena</label>
+      <div style="position:relative;">
+        <input type="password" id="loginPass" placeholder="tu contrasena" autocomplete="current-password" style="padding-right:52px;"/>
+        <button type="button" onclick="togglePass('loginPass',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:22px;line-height:1;padding:0;">👁</button>
+      </div>
+    </div>
     <div class="auth-err" id="loginErr"></div>
     <button class="btn-main" id="loginBtn" onclick="doLogin()">Entrar</button>
     <button onclick="showRecovery()" style="background:none;border:none;color:var(--gold2);font-size:15px;cursor:pointer;padding:6px 0;text-decoration:underline;font-family:var(--font);">Olvide mi contrasena</button>
@@ -264,7 +270,13 @@ input{-webkit-appearance:none;appearance:none;}
     <div class="field"><label>Nombre completo</label><input type="text" id="regName" placeholder="Ej: Maria Lopez" autocapitalize="words"/></div>
     <div class="field"><label>Usuario (sin espacios)</label><input type="text" id="regUser" placeholder="Ej: marialopez" autocapitalize="none"/></div>
     <div class="field"><label>Correo electronico</label><input type="email" id="regEmail" placeholder="tu@correo.com" inputmode="email"/></div>
-    <div class="field"><label>Contrasena</label><input type="password" id="regPass" placeholder="Minimo 6 caracteres" autocomplete="new-password"/></div>
+    <div class="field">
+      <label>Contrasena</label>
+      <div style="position:relative;">
+        <input type="password" id="regPass" placeholder="Minimo 6 caracteres" autocomplete="new-password" style="padding-right:52px;"/>
+        <button type="button" onclick="togglePass('regPass',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:22px;line-height:1;padding:0;">👁</button>
+      </div>
+    </div>
     <div class="auth-err" id="regErr"></div>
     <div class="auth-ok" id="regOk"></div>
     <button class="btn-main" id="registerBtn" onclick="doRegister()">Crear cuenta</button>
@@ -496,7 +508,11 @@ function doLogin() {
 
   fetch(SUPA_URL + '/auth/v1/token?grant_type=password', {
     method: 'POST',
-    headers: { 'Content-Type':'application/json', 'apikey': SUPA_KEY },
+    headers: { 
+      'Content-Type':'application/json', 
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY
+    },
     body: JSON.stringify({ email: email, password: pass })
   })
   .then(function(r){ return r.json(); })
@@ -504,11 +520,16 @@ function doLogin() {
     btn.disabled = false; btn.textContent = 'Entrar';
     if (!data.access_token) {
       btn.disabled = false; btn.textContent = 'Entrar';
-      var lmsg = data.error_description || data.msg || data.error || '';
-      if (lmsg.toLowerCase().indexOf('confirm') >= 0) {
-        showAuthErr(err,'Debes confirmar tu correo primero. Revisa tu bandeja de entrada y spam.');
+      var lmsg = data.error_description || data.msg || data.error || data.message || '';
+      console.log('Login error:', JSON.stringify(data));
+      if (lmsg.toLowerCase().indexOf('confirm') >= 0 || lmsg.toLowerCase().indexOf('not confirmed') >= 0) {
+        showAuthErr(err,'Tu correo no esta confirmado. Revisa tu bandeja de entrada y spam, y toca el enlace que te enviamos.');
+      } else if (lmsg.toLowerCase().indexOf('invalid') >= 0 || lmsg.toLowerCase().indexOf('credentials') >= 0) {
+        showAuthErr(err,'Correo o contrasena incorrectos. Verifica tus datos o usa Olvide mi contrasena.');
+      } else if (lmsg.toLowerCase().indexOf('user') >= 0 && lmsg.toLowerCase().indexOf('not found') >= 0) {
+        showAuthErr(err,'No existe una cuenta con ese correo. Verifica o crea una cuenta nueva.');
       } else {
-        showAuthErr(err,'Correo o contrasena incorrectos. Usa el enlace Olvide mi contrasena si es necesario.');
+        showAuthErr(err, lmsg || 'Error al iniciar sesion. Intenta de nuevo.');
       }
       return;
     }
@@ -554,7 +575,11 @@ function doRegister() {
   // 1. Crear usuario en Supabase Auth
   fetch(SUPA_URL + '/auth/v1/signup', {
     method: 'POST',
-    headers: { 'Content-Type':'application/json', 'apikey': SUPA_KEY },
+    headers: { 
+      'Content-Type':'application/json', 
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY
+    },
     body: JSON.stringify({ email: email, password: pass })
   })
   .then(function(r){ return r.json(); })
@@ -622,6 +647,16 @@ function doRegister() {
   });
 }
 
+function togglePass(id, btn) {
+  var input = document.getElementById(id);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
 function doRecovery() {
   var email = document.getElementById('recoveryEmail').value.trim().toLowerCase();
   var err = document.getElementById('recoveryErr');
@@ -632,15 +667,18 @@ function doRecovery() {
   btn.disabled=true; btn.textContent='Enviando...';
   fetch(SUPA_URL+'/auth/v1/recover',{
     method:'POST',
-    headers:{'Content-Type':'application/json','apikey':SUPA_KEY},
+    headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY},
     body:JSON.stringify({email:email})
-  }).then(function(){
+  }).then(function(r){ return r.json(); }).then(function(d){
     btn.disabled=false; btn.textContent='Enviar enlace al correo';
-    ok.textContent='Listo! Revisa tu correo '+email+'. Si no llega, revisa la carpeta spam.';
+    // Supabase siempre responde 200 por seguridad aunque el email no exista
+    ok.textContent='Si existe una cuenta con ese correo, te enviamos el enlace para cambiar tu contrasena. Revisa tu bandeja de entrada y la carpeta spam.';
     ok.style.display='block';
   }).catch(function(){
     btn.disabled=false; btn.textContent='Enviar enlace al correo';
-    err.textContent='Error de conexion. Intenta de nuevo.'; err.style.display='block';
+    // Igual mostramos exito para no revelar si el email existe
+    ok.textContent='Revisa tu correo '+email+' incluyendo la carpeta spam.';
+    ok.style.display='block';
   });
 }
 function showAuthErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
