@@ -255,9 +255,9 @@ input{-webkit-appearance:none;appearance:none;}
     <div class="field"><label>Correo electronico</label><input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="email" inputmode="email"/></div>
     <div class="field">
       <label>Contrasena</label>
-      <div style="position:relative;">
-        <input type="password" id="loginPass" placeholder="tu contrasena" autocomplete="current-password" style="padding-right:52px;"/>
-        <button type="button" onclick="togglePass('loginPass',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:22px;line-height:1;padding:0;">👁</button>
+      <div style="position:relative;display:flex;align-items:center;">
+        <input type="password" id="loginPass" placeholder="tu contrasena" autocomplete="current-password" style="flex:1;padding:16px 52px 16px 18px;font-size:17px;border:1.5px solid var(--border);border-radius:var(--r2);background:var(--bg3);color:var(--text);width:100%;font-family:var(--font);"/>
+        <button type="button" onclick="togglePass('loginPass',this)" style="position:absolute;right:14px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:24px;line-height:1;padding:4px;z-index:2;">👁️</button>
       </div>
     </div>
     <div class="auth-err" id="loginErr"></div>
@@ -272,9 +272,9 @@ input{-webkit-appearance:none;appearance:none;}
     <div class="field"><label>Correo electronico</label><input type="email" id="regEmail" placeholder="tu@correo.com" inputmode="email"/></div>
     <div class="field">
       <label>Contrasena</label>
-      <div style="position:relative;">
-        <input type="password" id="regPass" placeholder="Minimo 6 caracteres" autocomplete="new-password" style="padding-right:52px;"/>
-        <button type="button" onclick="togglePass('regPass',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:22px;line-height:1;padding:0;">👁</button>
+      <div style="position:relative;display:flex;align-items:center;">
+        <input type="password" id="regPass" placeholder="Minimo 6 caracteres" autocomplete="new-password" style="flex:1;padding:16px 52px 16px 18px;font-size:17px;border:1.5px solid var(--border);border-radius:var(--r2);background:var(--bg3);color:var(--text);width:100%;font-family:var(--font);"/>
+        <button type="button" onclick="togglePass('regPass',this)" style="position:absolute;right:14px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:24px;line-height:1;padding:4px;z-index:2;">👁️</button>
       </div>
     </div>
     <div class="auth-err" id="regErr"></div>
