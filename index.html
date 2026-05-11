@@ -348,11 +348,8 @@ input{-webkit-appearance:none;appearance:none;}
           <span>Toca el boton amarillo, enfoca el codigo de barras y toma la foto. El resultado se guarda automaticamente en tu cuenta.</span>
         </div>
         <!-- Escaner en vivo con camara trasera -->
-        <video id="scanVideo" style="display:none;width:100%;max-height:300px;object-fit:cover;border-radius:var(--r);background:#000;" playsinline autoplay muted></video>
-        <canvas id="scanCanvas" style="display:none;"></canvas>
-
         <div id="scannerBox" style="display:none;position:relative;margin-bottom:14px;border-radius:var(--r);overflow:hidden;background:#000;">
-          <video id="scanVideo" style="width:100%;height:280px;object-fit:cover;display:block;" playsinline autoplay muted></video>
+          <video id="scanVideo" style="width:100%;height:280px;object-fit:cover;display:block;" playsinline autoplay muted webkit-playsinline></video>
           <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
             <div style="width:75%;height:90px;position:relative;">
               <div style="position:absolute;top:0;left:0;width:24px;height:24px;border-top:3px solid #F0BC3A;border-left:3px solid #F0BC3A;"></div>
@@ -806,8 +803,17 @@ function startScanner() {
     scanStream = stream;
     var video = document.getElementById('scanVideo');
     video.srcObject = stream;
-    video.play();
-    if (status) status.textContent = 'Apunta el codigo al recuadro dorado...';
+    var playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.then(function() {
+        if (status) status.textContent = 'Apunta el codigo al recuadro dorado...';
+      }).catch(function(e) {
+        console.log('Video play error:', e);
+        if (status) status.textContent = 'Apunta el codigo al recuadro dorado...';
+      });
+    } else {
+      if (status) status.textContent = 'Apunta el codigo al recuadro dorado...';
+    }
 
     if ('BarcodeDetector' in window) {
       // Metodo nativo Android Chrome - mas rapido
