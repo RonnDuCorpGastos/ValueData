@@ -347,26 +347,29 @@ input{-webkit-appearance:none;appearance:none;}
           <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <span>Toca el boton amarillo, enfoca el codigo de barras y toma la foto. El resultado se guarda automaticamente en tu cuenta.</span>
         </div>
-        <button class="btn-scan-big" id="btnScan" onclick="toggleScanner()">
-          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <!-- Escaner en vivo con camara trasera -->
+        <video id="scanVideo" style="display:none;width:100%;max-height:300px;object-fit:cover;border-radius:var(--r);background:#000;" playsinline autoplay muted></video>
+        <canvas id="scanCanvas" style="display:none;"></canvas>
+
+        <div id="scannerBox" style="display:none;position:relative;margin-bottom:14px;border-radius:var(--r);overflow:hidden;background:#000;">
+          <video id="scanVideo" style="width:100%;height:280px;object-fit:cover;display:block;" playsinline autoplay muted></video>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div style="width:75%;height:90px;position:relative;">
+              <div style="position:absolute;top:0;left:0;width:24px;height:24px;border-top:3px solid #F0BC3A;border-left:3px solid #F0BC3A;"></div>
+              <div style="position:absolute;top:0;right:0;width:24px;height:24px;border-top:3px solid #F0BC3A;border-right:3px solid #F0BC3A;"></div>
+              <div style="position:absolute;bottom:0;left:0;width:24px;height:24px;border-bottom:3px solid #F0BC3A;border-left:3px solid #F0BC3A;"></div>
+              <div style="position:absolute;bottom:0;right:0;width:24px;height:24px;border-bottom:3px solid #F0BC3A;border-right:3px solid #F0BC3A;"></div>
+              <div style="position:absolute;left:0;right:0;height:2px;background:#F0BC3A;box-shadow:0 0 10px #F0BC3A;animation:scanAnim 1.8s ease-in-out infinite;top:0;"></div>
+            </div>
+          </div>
+          <button onclick="stopScanner()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:14px;cursor:pointer;font-family:var(--font);z-index:10;">✕ Cerrar</button>
+          <div id="scanStatus" style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:#F0BC3A;text-align:center;padding:10px;font-size:14px;font-family:var(--font);">Apunta al codigo de barras...</div>
+        </div>
+
+        <button class="btn-scan-big" id="btnScan" onclick="startScanner()">
+          <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:#1a1400"><rect x="2" y="4" width="2" height="16"/><rect x="6" y="4" width="1" height="16"/><rect x="9" y="4" width="2" height="16"/><rect x="13" y="4" width="1" height="16"/><rect x="16" y="4" width="2" height="16"/><rect x="20" y="4" width="2" height="16"/></svg>
           Escanear codigo de barras
         </button>
-        <div id="scannerContainer" style="display:none;margin-bottom:16px;">
-          <div style="position:relative;width:100%;background:#000;border-radius:var(--r);overflow:hidden;">
-            <div id="scannerView" style="width:100%;"></div>
-            <div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;display:flex;align-items:center;justify-content:center;">
-              <div style="width:80%;height:100px;position:relative;">
-                <div style="position:absolute;top:0;left:0;width:22px;height:22px;border-top:3px solid #F0BC3A;border-left:3px solid #F0BC3A;border-radius:4px 0 0 0;"></div>
-                <div style="position:absolute;top:0;right:0;width:22px;height:22px;border-top:3px solid #F0BC3A;border-right:3px solid #F0BC3A;border-radius:0 4px 0 0;"></div>
-                <div style="position:absolute;bottom:0;left:0;width:22px;height:22px;border-bottom:3px solid #F0BC3A;border-left:3px solid #F0BC3A;border-radius:0 0 0 4px;"></div>
-                <div style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-bottom:3px solid #F0BC3A;border-right:3px solid #F0BC3A;border-radius:0 0 4px 0;"></div>
-                <div id="scanLine" style="position:absolute;left:0;right:0;height:2px;background:#F0BC3A;box-shadow:0 0 8px #F0BC3A;animation:scanAnim 2s linear infinite;"></div>
-              </div>
-            </div>
-            <button onclick="stopScanner()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:var(--font);">✕ Cerrar</button>
-          </div>
-          <div id="scannerStatus" style="text-align:center;padding:10px;font-size:14px;color:var(--gold2);">Apunta al codigo de barras...</div>
-        </div>
         <div class="or-sep">o ingresa el codigo manualmente</div>
         <div class="manual-row">
           <input type="text" id="barcodeInput" placeholder="Codigo de barras..." inputmode="numeric" maxlength="20" onkeydown="if(event.key==='Enter')doManualSearch()"/>
@@ -772,8 +775,104 @@ function switchTab(tab) {
 }
 
 // ═══════════════════════════════════════════
-// ESCANER
+// ESCANER EN VIVO - BarcodeDetector + Video
 // ═══════════════════════════════════════════
+var scanStream = null;
+var scanInterval = null;
+var scannerActive = false;
+var lastCode = '';
+var lastCodeTime = 0;
+
+function startScanner() {
+  var box = document.getElementById('scannerBox');
+  var btn = document.getElementById('btnScan');
+  var status = document.getElementById('scanStatus');
+  if (!box || !btn) { showToast('Error: elementos no encontrados'); return; }
+  if (scannerActive) { stopScanner(); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    document.getElementById('scanFeedback').innerHTML = '<div class="scan-err-box"><div class="scan-err-title">Camara no disponible</div><div class="scan-err-sub">Tu navegador no permite acceso a la camara. Usa Chrome en Android o Safari en iPhone.</div></div>';
+    return;
+  }
+  box.style.display = 'block';
+  btn.innerHTML = '&#x23F9; Detener escaner';
+  btn.style.background = '#333';
+  btn.style.color = '#F0BC3A';
+  scannerActive = true;
+  if (status) status.textContent = 'Iniciando camara...';
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+  }).then(function(stream) {
+    scanStream = stream;
+    var video = document.getElementById('scanVideo');
+    video.srcObject = stream;
+    video.play();
+    if (status) status.textContent = 'Apunta el codigo al recuadro dorado...';
+
+    if ('BarcodeDetector' in window) {
+      // Metodo nativo Android Chrome - mas rapido
+      var detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code','data_matrix'] });
+      scanInterval = setInterval(function() {
+        if (!scannerActive) return;
+        detector.detect(video).then(function(codes) {
+          if (!codes || !codes.length) return;
+          var code = codes[0].rawValue;
+          var now = Date.now();
+          if (code === lastCode && now - lastCodeTime < 3000) return;
+          lastCode = code; lastCodeTime = now;
+          if (navigator.vibrate) navigator.vibrate([80,40,80]);
+          stopScanner();
+          document.getElementById('barcodeInput').value = code;
+          document.getElementById('scanFeedback').innerHTML = '';
+          showToast('Codigo leido: ' + code);
+          showResult(code, true);
+        }).catch(function(){});
+      }, 250);
+    } else if (typeof ZXing !== 'undefined') {
+      // Fallback ZXing para otros navegadores
+      if (status) status.textContent = 'Escaneando (mantén quieto el celular)...';
+      var reader = new ZXing.BrowserMultiFormatReader();
+      reader.decodeFromStream(stream, video, function(result, err) {
+        if (!result || !scannerActive) return;
+        var code = result.getText();
+        var now = Date.now();
+        if (code === lastCode && now - lastCodeTime < 3000) return;
+        lastCode = code; lastCodeTime = now;
+        if (navigator.vibrate) navigator.vibrate(100);
+        stopScanner();
+        document.getElementById('barcodeInput').value = code;
+        document.getElementById('scanFeedback').innerHTML = '';
+        showToast('Codigo leido: ' + code);
+        showResult(code, true);
+      });
+    } else {
+      if (status) status.textContent = 'Cargando lector... espera un momento';
+      setTimeout(function() { if (scannerActive) { stopScanner(); startScanner(); } }, 2000);
+    }
+  }).catch(function(err) {
+    stopScanner();
+    var msg = err.name === 'NotAllowedError'
+      ? 'Permiso de camara denegado. En Chrome: toca los 3 puntos > Configuracion > Permisos del sitio > Camara > Permitir.'
+      : 'No se pudo abrir la camara: ' + (err.message || err.name);
+    document.getElementById('scanFeedback').innerHTML = '<div class="scan-err-box"><div class="scan-err-title">Error de camara</div><div class="scan-err-sub">' + msg + '</div></div>';
+  });
+}
+
+function stopScanner() {
+  scannerActive = false;
+  clearInterval(scanInterval); scanInterval = null;
+  if (scanStream) { scanStream.getTracks().forEach(function(t){t.stop();}); scanStream = null; }
+  var v = document.getElementById('scanVideo'); if (v) v.srcObject = null;
+  var box = document.getElementById('scannerBox'); if (box) box.style.display = 'none';
+  var btn = document.getElementById('btnScan');
+  if (btn) {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:#1a1400"><rect x="2" y="4" width="2" height="16"/><rect x="6" y="4" width="1" height="16"/><rect x="9" y="4" width="2" height="16"/><rect x="13" y="4" width="1" height="16"/><rect x="16" y="4" width="2" height="16"/><rect x="20" y="4" width="2" height="16"/></svg> Escanear codigo de barras';
+    btn.style.background = ''; btn.style.color = '';
+  }
+}
+
+document.addEventListener('visibilitychange', function() { if (document.hidden && scannerActive) stopScanner(); });
+
 function onPhotoTaken(input) {
   if (!input.files || !input.files[0]) return;
   var file = input.files[0];
@@ -1148,6 +1247,6 @@ function showToast(msg){
   }
 })();
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 </body>
 </html>
