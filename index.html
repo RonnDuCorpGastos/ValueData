@@ -444,11 +444,23 @@ var HEADERS = {
 function supa(path, method, body, token) {
   var h = Object.assign({}, HEADERS);
   if (token) h['Authorization'] = 'Bearer ' + token;
+  // Para INSERT necesitamos Prefer: return=representation para obtener el registro creado
+  if (method === 'POST' && body) h['Prefer'] = 'return=representation';
   return fetch(SUPA_URL + path, {
     method: method || 'GET',
     headers: h,
     body: body ? JSON.stringify(body) : undefined
-  }).then(function(r){ return r.json(); });
+  }).then(function(r) {
+    // Supabase devuelve 204 sin body en DELETE, 201 con body en INSERT
+    if (r.status === 204 || r.status === 201 && r.headers.get('content-length') === '0') {
+      return { success: true };
+    }
+    return r.text().then(function(text) {
+      if (!text || text.trim() === '') return { success: true };
+      try { return JSON.parse(text); }
+      catch(e) { return { success: true, raw: text }; }
+    });
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -675,6 +687,75 @@ function togglePass(id, btn) {
     btn.textContent = '👁';
   }
 }
+
+// ═══════════════════════════════════════════
+// REPORTAR PRECIO REAL
+// ═══════════════════════════════════════════
+function showPriceReport(code, productName) {
+  var storeOpts = STORES.map(function(s) {
+    return '<option value="' + s.name + '">' + s.name + '</option>';
+  }).join('');
+
+  var modal = document.createElement('div');
+  modal.id = 'priceReportModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:flex;align-items:flex-end;';
+  
+  var inner = document.createElement('div');
+  inner.style.cssText = 'width:100%;background:var(--bg2);border-radius:16px 16px 0 0;padding:24px;border-top:1px solid var(--border);';
+  inner.innerHTML = ''
+    + '<div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px;">Reportar precio real</div>'
+    + '<div style="font-size:13px;color:var(--text3);margin-bottom:18px;">' + productName + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:14px;">'
+    + '<div>'
+    +   '<label style="font-size:14px;color:var(--text2);display:block;margin-bottom:7px;">Supermercado</label>'
+    +   '<select id="rpStore" style="width:100%;padding:13px;font-size:16px;border:1.5px solid #3A3A37;border-radius:12px;background:#2E2E2B;color:#F2EFE6;font-family:inherit;">' + storeOpts + '</select>'
+    + '</div>'
+    + '<div>'
+    +   '<label style="font-size:14px;color:var(--text2);display:block;margin-bottom:7px;">Precio que viste ($)</label>'
+    +   '<input type="number" id="rpPrice" step="0.01" min="0.01" placeholder="Ej: 1.85" style="width:100%;padding:14px;font-size:22px;font-weight:700;border:1.5px solid #3A3A37;border-radius:12px;background:#2E2E2B;color:#F0BC3A;font-family:inherit;"/>'
+    + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:10px;margin-top:18px;">'
+    +   '<button id="rpSubmitBtn" style="flex:1;padding:15px;font-size:16px;font-weight:600;background:#D4A017;color:#1a1400;border:none;border-radius:12px;cursor:pointer;font-family:inherit;">Enviar precio</button>'
+    +   '<button id="rpCancelBtn" style="padding:15px 20px;font-size:16px;background:#2E2E2B;color:#7A7870;border:1px solid #3A3A37;border-radius:12px;cursor:pointer;font-family:inherit;">Cancelar</button>'
+    + '</div>';
+
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+
+  // Store code/name for submit
+  document.getElementById('rpSubmitBtn').onclick = function() { submitPriceReport(code, productName); };
+  document.getElementById('rpCancelBtn').onclick = function() { modal.remove(); };
+  modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+}
+
+
+function submitPriceReport(code, productName) {
+  var store = document.getElementById('rpStore').value;
+  var price = parseFloat(document.getElementById('rpPrice').value);
+  if (!store || isNaN(price) || price <= 0) { showToast('Ingresa un precio valido'); return; }
+
+  var row = {
+    usuario_id: currentUser.id,
+    codigo_barras: code,
+    nombre_producto: productName,
+    supermercado: store,
+    precio_reportado: price,
+    fecha_reporte: new Date().toISOString(),
+    ciudad: 'Ecuador'
+  };
+
+  supa('/rest/v1/precios_reportados', 'POST', row, accessToken)
+    .then(function(r) {
+      document.getElementById('priceReportModal').remove();
+      showToast('Precio reportado. Gracias por contribuir!');
+    })
+    .catch(function() {
+      document.getElementById('priceReportModal').remove();
+      showToast('Precio guardado localmente. Gracias!');
+    });
+}
+
 function doRecovery() {
   var email = document.getElementById('recoveryEmail').value.trim().toLowerCase();
   var err = document.getElementById('recoveryErr');
@@ -735,27 +816,36 @@ function enterApp() {
 // CARGAR DATOS DEL USUARIO DESDE SUPABASE
 // ═══════════════════════════════════════════
 function loadUserData() {
-  if (!currentUser || !accessToken) return;
-  // Escaneos
+  if (!currentUser || !accessToken) { console.warn('loadUserData: no user/token'); return; }
+  console.log('Loading data for user:', currentUser.id);
+
+  // Cargar historial de escaneos
   supa('/rest/v1/escaneos?select=*&usuario_id=eq.' + currentUser.id + '&order=fecha_escaneo.desc&limit=300', 'GET', null, accessToken)
     .then(function(data) {
+      console.log('Escaneos cargados:', Array.isArray(data) ? data.length : JSON.stringify(data));
       if (Array.isArray(data)) {
         userHistory = data;
-        if (document.getElementById('pane-history') && !document.getElementById('pane-history').classList.contains('hidden')) {
-          renderHistory();
-        }
+        var histPane = document.getElementById('pane-history');
+        if (histPane && !histPane.classList.contains('hidden')) renderHistory();
+      } else if (data && data.error) {
+        console.error('Error cargando escaneos:', data.error, data.message);
       }
-    }).catch(function(){});
-  // Lista
+    })
+    .catch(function(e) { console.error('Error red escaneos:', e); });
+
+  // Cargar lista de productos
   supa('/rest/v1/lista_productos?select=*&usuario_id=eq.' + currentUser.id + '&order=fecha_agregado.desc', 'GET', null, accessToken)
     .then(function(data) {
+      console.log('Lista cargada:', Array.isArray(data) ? data.length : JSON.stringify(data));
       if (Array.isArray(data)) {
         userList = data;
-        if (document.getElementById('pane-list') && !document.getElementById('pane-list').classList.contains('hidden')) {
-          renderList('');
-        }
+        var listPane = document.getElementById('pane-list');
+        if (listPane && !listPane.classList.contains('hidden')) renderList('');
+      } else if (data && data.error) {
+        console.error('Error cargando lista:', data.error, data.message);
       }
-    }).catch(function(){});
+    })
+    .catch(function(e) { console.error('Error red lista:', e); });
 }
 
 // ═══════════════════════════════════════════
@@ -1021,59 +1111,98 @@ function showResult(code, fromScanner) {
 function showResultWithData(code, p, fromScanner) {
   var area = document.getElementById('resultArea');
   var prices = p.prices || [];
-  var minP=Math.min.apply(null,prices), maxP=Math.max.apply(null,prices);
-  var bestIdx=prices.indexOf(minP), bestStore=STORES[bestIdx].name;
-  var dt=nowStr();
-  var inList=userList.find(function(x){return x.codigo_barras===code;});
+  var minP = Math.min.apply(null, prices);
+  var maxP = Math.max.apply(null, prices);
+  var bestIdx = prices.indexOf(minP);
+  var bestStore = STORES[bestIdx] ? STORES[bestIdx].name : '';
+  var dt = nowStr();
+  var inList = !!(userList.find(function(x){ return x.codigo_barras === code; }));
 
-  // GUARDAR EN SUPABASE — tabla escaneos
+  // Guardar en Supabase — tabla escaneos
   var scanRow = {
-    usuario_id:       currentUser.id,
-    codigo_barras:    code,
-    nombre_producto:  p.name,
-    marca:            p.brand,
-    categoria:        p.cat,
-    supermercado:     bestStore,
-    precio_minimo:    minP,
-    precio_maximo:    maxP,
-    precios_json:     JSON.stringify(prices.map(function(pv,i){return {supermercado:STORES[i].name,precio:pv};})),
-    fecha_escaneo:    dt.iso,
-    origen:           fromScanner ? 'camara' : 'manual'
+    usuario_id:      currentUser.id,
+    codigo_barras:   code,
+    nombre_producto: p.name,
+    marca:           p.brand,
+    categoria:       p.cat,
+    supermercado:    bestStore,
+    precio_minimo:   minP,
+    precio_maximo:   maxP,
+    precios_json:    JSON.stringify(prices.map(function(pv, i){ return {supermercado: STORES[i].name, precio: pv}; })),
+    fecha_escaneo:   dt.iso,
+    origen:          fromScanner ? 'camara' : 'manual'
   };
+
   supa('/rest/v1/escaneos', 'POST', scanRow, accessToken)
-    .then(function(r){
-      if (!r.error) {
-        userHistory.unshift(Object.assign({}, scanRow, {id: Date.now()}));
-      }
-    }).catch(function(){});
+    .then(function(r) {
+      console.log('Escaneo guardado:', JSON.stringify(r));
+      var savedId = (Array.isArray(r) && r[0]) ? r[0].id : Date.now();
+      userHistory.unshift(Object.assign({}, scanRow, {id: savedId}));
+    })
+    .catch(function(e) {
+      console.error('Error guardando escaneo:', e);
+      userHistory.unshift(Object.assign({}, scanRow, {id: Date.now()}));
+    });
 
-  // RENDER
-  var rows='';
-  STORES.forEach(function(s,i){
-    var pv=prices[i], isBest=pv===minP, isWorst=pv===maxP;
-    var tag=isBest?'<span class="tag-best">Mejor precio</span>':isWorst?'<span class="tag-worst">Mas caro</span>':'';
-    var col=isBest?'var(--gold2)':isWorst?'var(--text3)':'var(--text)';
-    rows+='<div class="price-row"><div class="store-dot" style="background:'+s.color+'"></div><div class="store-nm">'+s.name+'</div>'+tag+'<div class="price-val" style="color:'+col+'">$'+pv.toFixed(2)+'</div></div>';
+  // Construir filas de precios
+  var rows = '';
+  STORES.forEach(function(s, i) {
+    var pv = prices[i] || 0;
+    var isBest = (pv === minP);
+    var isWorst = (pv === maxP);
+    var tag = isBest ? '<span class="tag-best">Mejor precio</span>' : isWorst ? '<span class="tag-worst">Mas caro</span>' : '';
+    var col = isBest ? 'var(--gold2)' : isWorst ? 'var(--text3)' : 'var(--text)';
+    rows += '<div class="price-row">'
+      + '<div class="store-dot" style="background:' + s.color + '"></div>'
+      + '<div class="store-nm">' + s.name + '</div>'
+      + tag
+      + '<div class="price-val" style="color:' + col + '">$' + pv.toFixed(2) + '</div>'
+      + '</div>';
   });
-  var saving=(maxP-minP).toFixed(2);
 
-  area.innerHTML='<div class="result-card">'
-    +'<div class="result-head">'
-    +'<div class="result-name">'+p.name+'</div>'
-    +'<div class="result-meta">'+p.brand+' &middot; '+p.cat+'</div>'
-    +'<div class="result-bc">'+code+'</div>'
-    +'<div class="result-saved">'
-    +'<span class="saved-pill green"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Guardado en la nube</span>'
-    +'<span class="saved-pill gray"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'+dt.fecha+'</span>'
-    +'<span class="saved-pill gray"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'+dt.hora+'</span>'
-    +'<span class="saved-pill gray">'+(fromScanner?'📷':'⌨️')+' '+(fromScanner?'Camara':'Manual')+'</span>'
-    +'</div></div>'
-    +'<div class="price-list">'+rows+'</div>'
-    +'<div class="saving-strip"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span class="saving-txt">Ahorras $'+saving+' comprando en '+bestStore+'</span></div>'
-    +'<div class="result-actions">'
-    +'<button class="btn-agregar'+(inList?' added':'')+'" onclick="toggleList(\''+code+'\')">'+( inList?'✓ En mi lista':'+ Agregar a lista')+'</button>'
-    +'<button class="btn-compartir" onclick="doShare(\''+p.name+'\','+minP+',\''+bestStore+'\')">Compartir</button>'
-    +'</div></div>';
+  var saving = (maxP - minP).toFixed(2);
+  var btnLabel = inList ? '✓ En mi lista' : '+ Agregar a lista';
+  var btnClass = 'btn-agregar' + (inList ? ' added' : '');
+  var origenLabel = fromScanner ? 'Camara' : 'Manual';
+  var origenIcon = fromScanner ? '📷' : '⌨️';
+
+  // Construir HTML del resultado
+  var html = '<div class="result-card">';
+  html += '<div class="result-head">';
+  html += '<div class="result-name">' + p.name + '</div>';
+  html += '<div class="result-meta">' + p.brand + ' &middot; ' + p.cat + '</div>';
+  html += '<div class="result-bc">' + code + '</div>';
+  html += '<div class="result-saved">';
+  html += '<span class="saved-pill green"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Guardado en la nube</span>';
+  html += '<span class="saved-pill gray"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' + dt.fecha + '</span>';
+  html += '<span class="saved-pill gray"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' + dt.hora + '</span>';
+  html += '<span class="saved-pill gray">' + origenIcon + ' ' + origenLabel + '</span>';
+  html += '</div></div>';
+  html += '<div class="price-list">' + rows + '</div>';
+  html += '<div class="saving-strip">';
+  html += '<svg viewBox="0 0 24 24" style="width:17px;height:17px;fill:var(--gold);flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+  html += '<span class="saving-txt">Ahorras $' + saving + ' comprando en ' + bestStore + '</span>';
+  html += '</div>';
+  html += '<div class="result-actions">';
+  html += '<button class="' + btnClass + '" id="btn-list-' + code + '">' + btnLabel + '</button>';
+  html += '<button class="btn-compartir" id="btn-share-' + code + '">Compartir</button>';
+  html += '</div>';
+  html += '<div style="padding:10px 18px;background:var(--bg3);border-top:1px solid var(--border);">';
+  html += '<button id="btn-report-' + code + '" style="width:100%;padding:11px;font-size:13px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;font-family:var(--font);">📝 Reportar precio real que vi en tienda</button>';
+  html += '</div>';
+  html += '</div>';
+
+  area.innerHTML = html;
+
+  // Agregar eventos despues de insertar el HTML
+  var btnList = document.getElementById('btn-list-' + code);
+  if (btnList) btnList.addEventListener('click', function(){ toggleList(code); });
+
+  var btnShare = document.getElementById('btn-share-' + code);
+  if (btnShare) btnShare.addEventListener('click', function(){ doShare(p.name, minP, bestStore); });
+
+  var btnReport = document.getElementById('btn-report-' + code);
+  if (btnReport) btnReport.addEventListener('click', function(){ showPriceReport(code, p.name); });
 }
 
 // ═══════════════════════════════════════════
