@@ -1,0 +1,39 @@
+name: ValueData Scraper Diario
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # Todos los dias a las 10am hora Ecuador (UTC-5 = 15:00 UTC)
+  workflow_dispatch:        # Permite ejecutar manualmente desde GitHub
+
+jobs:
+  scraper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Ejecutar scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python valuedata_scraper.py
+
+      - name: Guardar logs como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-log-${{ github.run_number }}
+          path: scraper.log
+          retention-days: 7
