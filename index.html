@@ -448,6 +448,10 @@ input{-webkit-appearance:none;appearance:none;}
           <span class="chip" onclick="loadDemo('7861006000102')">Azucar San Carlos 2kg</span>
           <span class="chip" onclick="loadDemo('7862128054791')">Yogurt Toni 1kg</span>
           <span class="chip" onclick="loadDemo('7861002670019')">Pan Bimbo 500g</span>
+          <span class="chip" onclick="loadDemo('7861055100013')">Colgate 100ml</span>
+          <span class="chip" onclick="loadDemo('7862100100016')">Mortadela Plumrose</span>
+          <span class="chip" onclick="loadDemo('7861096600012')">Sal Crisal 500g</span>
+          <span class="chip" onclick="loadDemo('7861094210013')">Mayonesa Gustadina</span>
         </div>
       </div>
       <div id="scanFeedback"></div>
@@ -533,25 +537,95 @@ function supa(path, method, body, token) {
 // DATOS DEMO
 // ═══════════════════════════════════════════
 var STORES = [
-  {name:'Supermaxi',      color:'#378ADD'},
-  {name:'Mi Comisariato', color:'#EF9F27'},
-  {name:'TuTi',           color:'#E24B4A'},
-  {name:'TIA',            color:'#F0997B'},
-  {name:'Megamaxi',       color:'#5DC8A0'},
-  {name:'Hipermarket',    color:'#AFA9EC'},
-  {name:'Aki',            color:'#FDD878'},
-  {name:'Santa Maria',    color:'#B4B2A9'}
+  {name:'Supermaxi',      color:'#1A5276'},
+  {name:'Megamaxi',       color:'#2874A6'},
+  {name:'Mi Comisariato', color:'#E67E22'},
+  {name:'TuTi',           color:'#E74C3C'},
+  {name:'TIA',            color:'#E91E8C'},
+  {name:'Tia Go',         color:'#C0392B'},
+  {name:'Aki',            color:'#F0BC3A'},
+  {name:'Gran Aki',       color:'#D4A017'},
+  {name:'Santa Maria',    color:'#27AE60'},
+  {name:'El Coral',       color:'#8E44AD'}
 ];
 
 var PRODUCTS = {
-  '7750403001035':{name:'Coca-Cola 1.5L',          brand:'Coca-Cola',   cat:'Bebidas',   prices:[1.85,1.79,1.65,1.72,1.90,1.75,1.69,1.80]},
-  '7861000101040':{name:'Leche Vita Entera 1L',    brand:'Nestle',      cat:'Lacteos',   prices:[0.90,0.88,0.82,0.85,0.92,0.87,0.84,0.89]},
-  '7861005601015':{name:'Aceite La Favorita 900ml',brand:'La Favorita', cat:'Aceites',   prices:[2.45,2.39,2.20,2.35,2.50,2.42,2.28,2.40]},
-  '7861009210011':{name:'Arroz Gustadina 1kg',     brand:'Gustadina',   cat:'Secos',     prices:[0.85,0.82,0.75,0.79,0.88,0.84,0.78,0.83]},
-  '7861094100017':{name:'Atun Real 170g',          brand:'Real',        cat:'Conservas', prices:[1.45,1.39,1.28,1.35,1.49,1.42,1.32,1.40]},
-  '7861006000102':{name:'Azucar San Carlos 2kg',   brand:'San Carlos',  cat:'Secos',     prices:[1.95,1.89,1.75,1.82,1.99,1.92,1.80,1.90]},
-  '7862128054791':{name:'Yogurt Toni 1kg',         brand:'Toni',        cat:'Lacteos',   prices:[2.10,2.05,1.95,2.00,2.15,2.08,1.98,2.12]},
-  '7861002670019':{name:'Pan Bimbo Blanco 500g',   brand:'Bimbo',       cat:'Panaderia', prices:[1.35,1.30,1.20,1.25,1.40,1.33,1.22,1.32]}
+  '7750403001035':{name:'Coca-Cola Original 1.5L',     brand:'Coca-Cola',    cat:'Bebidas',    prices:[1.85,1.90,1.79,1.65,1.72,1.70,1.69,1.68,1.80,1.75]},
+  '7750403017067':{name:'Coca-Cola 500ml',             brand:'Coca-Cola',    cat:'Bebidas',    prices:[0.85,0.88,0.82,0.75,0.79,0.78,0.78,0.77,0.84,0.80]},
+  '7750403002032':{name:'Pepsi Cola 2L',               brand:'Pepsi',        cat:'Bebidas',    prices:[1.75,1.80,1.70,1.55,1.65,1.63,1.60,1.59,1.74,1.68]},
+  '7861030600016':{name:'Agua Dasani 600ml',           brand:'Dasani',       cat:'Bebidas',    prices:[0.55,0.58,0.52,0.45,0.50,0.49,0.48,0.47,0.54,0.50]},
+  '7861030400011':{name:'Agua Cristal 500ml',          brand:'Cristal',      cat:'Bebidas',    prices:[0.50,0.52,0.48,0.42,0.46,0.45,0.44,0.43,0.49,0.47]},
+  '7861000300019':{name:'Cafe Colcafe 170g',           brand:'Colcafe',      cat:'Bebidas',    prices:[3.50,3.55,3.45,3.20,3.35,3.30,3.28,3.25,3.45,3.38]},
+  '7861040100012':{name:'Jugo Del Valle Naranja 1L',   brand:'Del Valle',    cat:'Bebidas',    prices:[1.45,1.50,1.40,1.28,1.35,1.33,1.32,1.31,1.44,1.39]},
+  '7861000101040':{name:'Leche Vita Entera 1L',        brand:'Vita',         cat:'Lacteos',    prices:[0.90,0.92,0.88,0.82,0.85,0.84,0.84,0.83,0.89,0.87]},
+  '7861000101071':{name:'Leche Vita Semidescremada 1L',brand:'Vita',         cat:'Lacteos',    prices:[0.92,0.95,0.90,0.84,0.87,0.86,0.86,0.85,0.91,0.89]},
+  '7861000102010':{name:'Leche Andina Entera 1L',      brand:'Andina',       cat:'Lacteos',    prices:[0.88,0.90,0.86,0.80,0.83,0.82,0.82,0.81,0.87,0.85]},
+  '7862128054791':{name:'Yogurt Toni Natural 1kg',     brand:'Toni',         cat:'Lacteos',    prices:[2.10,2.15,2.05,1.95,2.00,1.98,1.98,1.96,2.12,2.05]},
+  '7862128020017':{name:'Yogurt Toni Fresa 200g',      brand:'Toni',         cat:'Lacteos',    prices:[0.55,0.58,0.52,0.48,0.51,0.50,0.50,0.49,0.54,0.52]},
+  '7862128034120':{name:'Queso Fresco Floralp 500g',   brand:'Floralp',      cat:'Lacteos',    prices:[3.20,3.30,3.15,2.95,3.05,3.00,3.00,2.98,3.18,3.10]},
+  '7861000200011':{name:'Mantequilla Klar Sin Sal 200g',brand:'Klar',        cat:'Lacteos',    prices:[1.75,1.80,1.70,1.58,1.65,1.63,1.62,1.60,1.74,1.68]},
+  '7861000400016':{name:'Leche Condensada Nestle 397g',brand:'Nestle',       cat:'Lacteos',    prices:[2.05,2.10,2.00,1.88,1.96,1.93,1.92,1.90,2.04,1.98]},
+  '7862128080015':{name:'Huevos Pronaca Blancos x12',  brand:'Pronaca',      cat:'Lacteos',    prices:[2.20,2.25,2.15,2.00,2.10,2.08,2.05,2.03,2.18,2.12]},
+  '7861005601015':{name:'Aceite La Favorita 900ml',    brand:'La Favorita',  cat:'Aceites',    prices:[2.45,2.50,2.39,2.20,2.35,2.30,2.28,2.25,2.40,2.35]},
+  '7861005601022':{name:'Aceite La Favorita 2L',       brand:'La Favorita',  cat:'Aceites',    prices:[4.80,4.90,4.70,4.40,4.60,4.55,4.50,4.45,4.75,4.65]},
+  '7861007000012':{name:'Aceite Cocinero 1L',          brand:'Cocinero',     cat:'Aceites',    prices:[2.10,2.15,2.05,1.90,2.00,1.98,1.95,1.93,2.08,2.02]},
+  '7861009210011':{name:'Arroz Gustadina Extra 1kg',   brand:'Gustadina',    cat:'Granos',     prices:[0.85,0.88,0.82,0.75,0.79,0.78,0.78,0.77,0.83,0.81]},
+  '7861009210028':{name:'Arroz Gustadina Extra 5kg',   brand:'Gustadina',    cat:'Granos',     prices:[3.95,4.05,3.85,3.55,3.75,3.70,3.68,3.65,3.90,3.80]},
+  '7861009220014':{name:'Arroz Gallo de Oro 1kg',      brand:'Gallo de Oro', cat:'Granos',     prices:[0.88,0.90,0.85,0.78,0.82,0.81,0.80,0.79,0.86,0.84]},
+  '7861009310015':{name:'Frejol Rojo 500g',            brand:'La Favorita',  cat:'Granos',     prices:[1.05,1.08,1.00,0.92,0.98,0.96,0.95,0.94,1.04,1.00]},
+  '7861009320011':{name:'Lenteja Verde 500g',          brand:'La Favorita',  cat:'Granos',     prices:[1.10,1.13,1.05,0.95,1.02,1.00,0.98,0.97,1.09,1.05]},
+  '7861009130012':{name:'Fideo Oriental N5 400g',      brand:'Oriental',     cat:'Pastas',     prices:[0.65,0.68,0.62,0.55,0.60,0.59,0.58,0.57,0.63,0.61]},
+  '7861009140015':{name:'Fideo Don Vittorio 400g',     brand:'Don Vittorio', cat:'Pastas',     prices:[0.70,0.73,0.67,0.60,0.65,0.64,0.63,0.62,0.68,0.66]},
+  '7861096800011':{name:'Avena Quaker 400g',           brand:'Quaker',       cat:'Cereales',   prices:[1.25,1.28,1.20,1.10,1.15,1.13,1.13,1.12,1.23,1.19]},
+  '7861006000102':{name:'Azucar San Carlos 2kg',       brand:'San Carlos',   cat:'Azucar',     prices:[1.95,2.00,1.89,1.75,1.82,1.80,1.80,1.78,1.90,1.85]},
+  '7861055600018':{name:'Azucar Valdez Morena 2kg',    brand:'Valdez',       cat:'Azucar',     prices:[1.89,1.94,1.84,1.70,1.78,1.75,1.75,1.73,1.86,1.81]},
+  '7861006100011':{name:'Panela en Bloque 500g',       brand:'El Angel',     cat:'Azucar',     prices:[0.65,0.68,0.62,0.55,0.60,0.59,0.58,0.57,0.64,0.61]},
+  '7861096600012':{name:'Sal Crisal Yodada 500g',      brand:'Crisal',       cat:'Condimentos',prices:[0.38,0.40,0.36,0.32,0.35,0.34,0.34,0.33,0.37,0.36]},
+  '7861094200014':{name:'Salsa Tomate Gustadina 400g', brand:'Gustadina',    cat:'Condimentos',prices:[1.15,1.18,1.10,1.02,1.08,1.06,1.05,1.04,1.14,1.10]},
+  '7861094210013':{name:'Mayonesa Gustadina 400g',     brand:'Gustadina',    cat:'Condimentos',prices:[1.85,1.90,1.80,1.68,1.76,1.73,1.72,1.70,1.83,1.78]},
+  '7861094220016':{name:'Mostaza Gustadina 200g',      brand:'Gustadina',    cat:'Condimentos',prices:[0.95,0.98,0.92,0.85,0.90,0.88,0.87,0.86,0.94,0.91]},
+  '7861001200014':{name:'Caldo Maggi Pollo x10',       brand:'Maggi',        cat:'Condimentos',prices:[0.95,0.98,0.92,0.85,0.90,0.88,0.87,0.86,0.94,0.91]},
+  '7861001500019':{name:'Salsa de Soya Kikko 200ml',   brand:'Kikko',        cat:'Condimentos',prices:[1.35,1.38,1.30,1.20,1.28,1.26,1.24,1.23,1.34,1.29]},
+  '7861094100017':{name:'Atun Real en Agua 170g',      brand:'Real',         cat:'Conservas',  prices:[1.45,1.50,1.39,1.28,1.35,1.33,1.32,1.30,1.40,1.37]},
+  '7861094110016':{name:'Atun Real en Aceite 170g',    brand:'Real',         cat:'Conservas',  prices:[1.50,1.55,1.44,1.32,1.40,1.38,1.36,1.34,1.45,1.42]},
+  '7861094300015':{name:'Sardinas Isabel Salsa 425g',  brand:'Isabel',       cat:'Conservas',  prices:[1.89,1.94,1.82,1.70,1.78,1.75,1.74,1.72,1.87,1.82]},
+  '7861094400012':{name:'Vegetales Mixtos 400g',       brand:'La Favorita',  cat:'Conservas',  prices:[1.25,1.28,1.20,1.10,1.17,1.15,1.13,1.12,1.24,1.19]},
+  '7861002670019':{name:'Pan Bimbo Blanco 500g',       brand:'Bimbo',        cat:'Panaderia',  prices:[1.35,1.38,1.30,1.20,1.25,1.23,1.22,1.21,1.32,1.28]},
+  '7861002680015':{name:'Pan Bimbo Integral 500g',     brand:'Bimbo',        cat:'Panaderia',  prices:[1.45,1.50,1.40,1.28,1.35,1.33,1.32,1.30,1.42,1.38]},
+  '7861003100016':{name:'Galletas Oreo 36g',           brand:'Oreo',         cat:'Galletas',   prices:[0.45,0.47,0.43,0.38,0.42,0.41,0.40,0.39,0.44,0.42]},
+  '7861003110019':{name:'Galletas Club Social x6',     brand:'Club Social',  cat:'Galletas',   prices:[0.65,0.68,0.62,0.55,0.60,0.59,0.58,0.57,0.64,0.61]},
+  '7861003120015':{name:'Galletas Ritz 118g',          brand:'Ritz',         cat:'Galletas',   prices:[1.35,1.38,1.30,1.20,1.27,1.25,1.23,1.22,1.33,1.29]},
+  '7861003200012':{name:'Papas Lays Clasicas 150g',    brand:'Lays',         cat:'Snacks',     prices:[1.45,1.50,1.40,1.28,1.36,1.34,1.32,1.30,1.43,1.38]},
+  '7861003210015':{name:'Pringles Original 40g',       brand:'Pringles',     cat:'Snacks',     prices:[1.25,1.28,1.20,1.10,1.17,1.15,1.13,1.12,1.24,1.19]},
+  '7861003300019':{name:'Chocolate Jet Leche 16g',     brand:'Jet',          cat:'Dulces',     prices:[0.35,0.37,0.33,0.29,0.32,0.32,0.31,0.30,0.34,0.33]},
+  '7861003310012':{name:'Chocolate Pacari 70% 50g',    brand:'Pacari',       cat:'Dulces',     prices:[2.85,2.90,2.78,2.60,2.72,2.68,2.65,2.63,2.82,2.74]},
+  '7861055100013':{name:'Pasta Dental Colgate 100ml',  brand:'Colgate',      cat:'Higiene',    prices:[1.45,1.50,1.40,1.30,1.37,1.35,1.34,1.32,1.44,1.39]},
+  '7861055110016':{name:'Colgate Total 75ml',          brand:'Colgate',      cat:'Higiene',    prices:[2.10,2.15,2.05,1.90,2.00,1.97,1.95,1.93,2.08,2.02]},
+  '7861055300017':{name:'Shampoo Head Shoulders 400ml',brand:'Head Shoulders',cat:'Higiene',   prices:[4.50,4.60,4.40,4.10,4.30,4.25,4.20,4.15,4.48,4.35]},
+  '7861055310015':{name:'Shampoo Sedal 340ml',         brand:'Sedal',        cat:'Higiene',    prices:[3.20,3.28,3.12,2.90,3.05,3.00,2.98,2.95,3.18,3.08]},
+  '7861055400014':{name:'Jabon Protex 3x125g',         brand:'Protex',       cat:'Higiene',    prices:[2.20,2.25,2.15,1.98,2.08,2.05,2.05,2.03,2.18,2.12]},
+  '7861055410017':{name:'Jabon Palmolive 3x90g',       brand:'Palmolive',    cat:'Higiene',    prices:[1.95,2.00,1.90,1.75,1.85,1.82,1.80,1.78,1.93,1.87]},
+  '7861055500018':{name:'Desodorante Rexona Men 150ml',brand:'Rexona',       cat:'Higiene',    prices:[3.45,3.52,3.38,3.15,3.30,3.25,3.22,3.18,3.42,3.32]},
+  '7861055510011':{name:'Desodorante Dove 150ml',      brand:'Dove',         cat:'Higiene',    prices:[3.55,3.62,3.48,3.24,3.40,3.35,3.32,3.28,3.52,3.42]},
+  '7861055700019':{name:'Papel Higienico Scott x4',    brand:'Scott',        cat:'Higiene',    prices:[1.85,1.90,1.80,1.65,1.75,1.73,1.70,1.68,1.83,1.78]},
+  '7861055710015':{name:'Papel Higienico Familia x6',  brand:'Familia',      cat:'Higiene',    prices:[2.45,2.50,2.38,2.20,2.32,2.28,2.25,2.22,2.42,2.35]},
+  '7861055800016':{name:'Panales Huggies Talla M x30', brand:'Huggies',      cat:'Bebe',       prices:[8.50,8.65,8.30,7.80,8.15,8.05,7.95,7.85,8.42,8.20]},
+  '7861056100015':{name:'Detergente Deja Limon 1kg',   brand:'Deja',         cat:'Limpieza',   prices:[2.15,2.20,2.10,1.95,2.05,2.02,2.00,1.98,2.12,2.06]},
+  '7861056110018':{name:'Detergente Deja Bebe 1kg',    brand:'Deja',         cat:'Limpieza',   prices:[2.25,2.30,2.18,2.02,2.13,2.10,2.08,2.05,2.22,2.15]},
+  '7861056200019':{name:'Jabon Rey Lavaplatos 360g',   brand:'Rey',          cat:'Limpieza',   prices:[0.85,0.88,0.82,0.75,0.80,0.78,0.77,0.76,0.84,0.81]},
+  '7861056300016':{name:'Suavizante Cierto 500ml',     brand:'Cierto',       cat:'Limpieza',   prices:[1.89,1.94,1.84,1.70,1.79,1.76,1.75,1.73,1.86,1.81]},
+  '7861056400013':{name:'Cloro Olimpia 1L',            brand:'Olimpia',      cat:'Limpieza',   prices:[0.75,0.78,0.72,0.65,0.70,0.69,0.68,0.67,0.74,0.71]},
+  '7861056700014':{name:'Esponja 3M Scotch-Brite x2',  brand:'3M',           cat:'Limpieza',   prices:[0.95,0.98,0.92,0.85,0.90,0.88,0.87,0.86,0.94,0.91]},
+  '7862100100016':{name:'Mortadela Plumrose 250g',     brand:'Plumrose',     cat:'Embutidos',  prices:[1.95,2.00,1.90,1.75,1.84,1.81,1.80,1.78,1.93,1.87]},
+  '7862100200019':{name:'Salchicha Vienesa 250g',      brand:'Plumrose',     cat:'Embutidos',  prices:[2.10,2.15,2.05,1.90,2.00,1.97,1.95,1.93,2.08,2.02]},
+  '7862100300015':{name:'Jamon Plumrose 250g',         brand:'Plumrose',     cat:'Embutidos',  prices:[2.50,2.55,2.44,2.28,2.38,2.35,2.32,2.29,2.47,2.40]},
+  '7862100400018':{name:'Chorizo Don Diego 250g',      brand:'Don Diego',    cat:'Embutidos',  prices:[2.35,2.40,2.28,2.12,2.23,2.20,2.17,2.14,2.32,2.26]},
+  '7862200100015':{name:'Nuggets Pronaca 400g',        brand:'Pronaca',      cat:'Congelados', prices:[3.85,3.95,3.75,3.50,3.68,3.62,3.58,3.55,3.80,3.70]},
+  '7862200300011':{name:'Helado Pinguino Vaso 100ml',  brand:'Pinguino',     cat:'Congelados', prices:[0.75,0.78,0.72,0.65,0.70,0.69,0.68,0.67,0.74,0.71]},
+  '7861080100017':{name:'Dog Chow Adultos 1.5kg',      brand:'Purina',       cat:'Mascotas',   prices:[5.85,5.95,5.72,5.35,5.62,5.55,5.48,5.42,5.78,5.63]},
+  '7861080200010':{name:'Cat Chow Adultos 1kg',        brand:'Purina',       cat:'Mascotas',   prices:[4.20,4.28,4.10,3.85,4.02,3.96,3.92,3.88,4.15,4.04]},
+  '7861090100014':{name:'Pilas Duracell AA x2',        brand:'Duracell',     cat:'Varios',     prices:[1.95,2.00,1.90,1.75,1.84,1.81,1.80,1.78,1.93,1.87]},
+  '7861090200017':{name:'Pilas Energizer AA x4',       brand:'Energizer',    cat:'Varios',     prices:[3.45,3.52,3.37,3.14,3.30,3.25,3.21,3.17,3.42,3.32]}
 };
 
 // ═══════════════════════════════════════════
@@ -1187,12 +1261,12 @@ function buscarEnSupabase(code, fromScanner) {
       var nombre = data[0].nombre_producto || ('Producto ' + code);
       var marca  = data[0].marca || '';
       var cat    = data[0].categoria || 'General';
-      var SNOMBRES = ['Supermaxi','Mi Comisariato','TuTi','TIA','Megamaxi','Hipermarket','Aki','Santa Maria'];
+      var SNOMBRES = ['Supermaxi','Megamaxi','Mi Comisariato','TuTi','TIA','Tia Go','Aki','Gran Aki','Santa Maria','El Coral'];
       var preciosMap = {};
       data.forEach(function(r){ preciosMap[r.supermercado] = parseFloat(r.precio); });
       var vals = Object.values(preciosMap).filter(function(v){ return v > 0; });
       var prom = vals.length ? vals.reduce(function(a,b){return a+b;},0)/vals.length : 1.00;
-      var vars = [1.00,0.97,0.89,0.94,1.03,0.98,0.92,0.99];
+      var vars = [1.00,1.03,0.97,0.89,0.94,0.93,0.92,0.91,0.99,0.95];
       var prices = SNOMBRES.map(function(s,i){
         return preciosMap[s] ? preciosMap[s] : Math.round(prom*vars[i]*100)/100;
       });
